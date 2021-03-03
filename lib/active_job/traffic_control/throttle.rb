@@ -6,14 +6,17 @@ module ActiveJob
       extend ::ActiveSupport::Concern
 
       class_methods do
-        def throttle(threshold:, period:, drop: false, key: nil)
+        def throttle(threshold:, period:, drop: false, key: nil, reenqueue_delay: nil)
           raise ArgumentError, "Threshold needs to be an integer > 0" if threshold.to_i < 1
+
+          reenqueue_delay ||= period...(period * 5)
 
           self.job_throttling = {
             threshold: threshold,
             period: period,
             drop: drop,
-            key: key
+            key: key,
+            reenqueue_delay: reenqueue_delay
           }
         end
 
@@ -42,8 +45,8 @@ module ActiveJob
               elsif self.class.job_throttling[:drop]
                 drop("throttling")
               else
-                period = self.class.job_throttling[:period]
-                reenqueue(period...(period * 5), "throttling")
+                reenqueue_delay = self.class.job_throttling[:reenqueue_delay]
+                reenqueue(reenqueue_delay, "throttling")
               end
             end
           else
