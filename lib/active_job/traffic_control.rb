@@ -56,9 +56,8 @@ module ActiveJob
       end
 
       def client_class_type(client)
-        if client.instance_of?(Dalli::Client)
-          Suo::Client::Memcached
-        elsif client.instance_of?(::Redis)
+        case client
+        when ::Redis
           Suo::Client::Redis
         else
           raise ArgumentError, "Unsupported client type: #{client}"
